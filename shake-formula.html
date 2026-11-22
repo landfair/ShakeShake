@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shake formula</title>
+<style>
+:root{
+  --paper:#F6F6F3; --card:#FFFFFF; --ink:#1B1E1B; --mid:#5F665D; --faint:#8B9187;
+  --rule:#DEDFDA; --cocoa:#5C3A2E; --cocoa-bg:#F0E9E5;
+  --ok:#3B6D11; --warn:#8A5206; --bad:#9E2B2B;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.55;font-variant-numeric:tabular-nums}
+.wrap{max-width:860px;margin:0 auto;padding:32px 20px 64px}
+h1{font-size:26px;font-weight:500;letter-spacing:-.015em;margin:0 0 2px}
+.sub{color:var(--mid);font-size:14px;margin:0 0 28px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);margin-bottom:26px}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  padding:8px 2px;margin-right:26px;font:inherit;font-size:15px;color:var(--mid);
+  cursor:pointer;transition:color .12s}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--cocoa);border-bottom-color:var(--cocoa)}
+.tab:focus-visible{outline:2px solid var(--cocoa);outline-offset:3px}
+.grp{font-size:13px;color:var(--faint);margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.chip{appearance:none;background:var(--card);border:1px solid var(--rule);border-radius:20px;
+  padding:6px 14px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--cocoa)}
+.chip[aria-pressed="true"]{background:var(--cocoa);border-color:var(--cocoa);color:#fff}
+.chip:focus-visible{outline:2px solid var(--cocoa);outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin:0 0 26px}
+.stat{background:var(--card);padding:14px 16px}
+.stat .k{font-size:12px;color:var(--faint);margin-bottom:3px}
+.stat .v{font-size:25px;font-weight:500;letter-spacing:-.02em;line-height:1.1}
+.row{display:flex;align-items:center;gap:14px;margin-bottom:11px}
+.row label{font-size:14.5px;color:var(--mid);width:112px;flex:none}
+.row output{font-size:14.5px;font-weight:500;min-width:46px;text-align:right;flex:none}
+input[type=range]{-webkit-appearance:none;appearance:none;background:none;flex:1;height:20px;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--rule);border-radius:2px}
+input[type=range]::-moz-range-track{height:3px;background:var(--rule);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--cocoa);margin-top:-6.5px;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:var(--cocoa);cursor:pointer}
+input[type=range]:focus-visible{outline:2px solid var(--cocoa);outline-offset:4px;border-radius:4px}
+.divide{border-top:1px solid var(--rule);padding-top:14px;margin-top:16px}
+.readout{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:13.5px;color:var(--mid);margin-top:18px}
+.readout b{font-weight:500;color:var(--ink)}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:18px 20px;margin-top:26px}
+.panel h2{font-size:15px;font-weight:500;margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{text-align:left;font-weight:500;color:var(--faint);font-size:12.5px;padding:0 0 8px;border-bottom:1px solid var(--rule)}
+td{padding:8px 0;border-bottom:1px solid var(--rule)}
+td.n{text-align:right;font-weight:500}
+td.u{text-align:right;color:var(--mid);font-size:13.5px}
+tr:last-child td{border-bottom:0}
+tfoot td{font-weight:500;border-top:1px solid var(--ink);border-bottom:0;padding-top:10px}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.bar{height:5px;background:var(--rule);border-radius:3px;overflow:hidden;margin-top:5px;min-width:70px}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--mid);transition:width .18s ease}
+.bar i.s-ok{background:var(--ok)}.bar i.s-warn{background:var(--warn)}.bar i.s-bad{background:var(--bad)}
+.bar i.s-out{background:var(--rule)}
+td.b{width:34%;padding-left:18px}
+.blabel{display:flex;justify-content:space-between;font-size:13px;color:var(--mid)}
+.blabel b{font-weight:500}
+.saverow{display:flex;gap:8px;align-items:center;margin:0 0 18px}
+.saverow input[type=text]{flex:1;max-width:240px;font:inherit;font-size:14px;padding:6px 10px;
+  border:1px solid var(--rule);border-radius:20px;background:var(--card);color:inherit}
+.saverow input[type=text]:focus-visible{outline:2px solid var(--cocoa);outline-offset:2px}
+.chip .x{margin-left:8px;opacity:.55;font-size:15px;line-height:1}
+.chip .x:hover{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(20,22,20,.42);display:flex;align-items:center;
+  justify-content:center;padding:20px;z-index:50}
+.modal[hidden]{display:none}
+.sheet{background:var(--card);border-radius:8px;max-width:660px;width:100%;max-height:82vh;
+  display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.sheet header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;
+  border-bottom:1px solid var(--rule)}
+.sheet h2{margin:0;font-size:17px;font-weight:500}
+.sheet .body{overflow:auto;padding:6px 22px 20px}
+.sheet footer{padding:14px 22px;border-top:1px solid var(--rule);display:flex;gap:8px;justify-content:flex-end}
+.xbtn{appearance:none;background:none;border:0;font:inherit;font-size:22px;line-height:1;color:var(--mid);
+  cursor:pointer;padding:0 4px}
+.xbtn:hover{color:var(--ink)}
+.logrow{cursor:pointer}
+.logrow:hover td{background:var(--paper)}
+.detail td{background:var(--paper);font-size:13px;color:var(--mid);padding:10px 12px}
+.empty{color:var(--faint);font-size:14px;padding:22px 0;text-align:center}
+ol{padding-left:20px;margin:0}
+ol li{margin-bottom:9px;font-size:14.5px}
+ol li:last-child{margin-bottom:0}
+.note{font-size:13.5px;color:var(--mid);margin-top:16px;padding-top:14px;border-top:1px solid var(--rule)}
+[hidden]{display:none !important}
+.label{background:#fff;color:#000;border:1px solid #000;padding:10px 12px;max-width:320px;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;line-height:1.25}
+.label .ttl{font-size:27px;font-weight:800;letter-spacing:-.03em;line-height:.95;margin-bottom:2px}
+.label .made{font-size:10px;margin-bottom:4px}
+.label .srv{font-size:12px;display:flex;justify-content:space-between;font-weight:600}
+.label hr{border:0;border-top:1px solid #000;margin:3px 0}
+.label hr.thick{border-top:9px solid #000}
+.label hr.mid{border-top:4px solid #000}
+.label .cal{display:flex;justify-content:space-between;align-items:flex-end;font-weight:800}
+.label .cal span:first-child{font-size:13px}
+.label .cal span:last-child{font-size:30px;letter-spacing:-.03em}
+.label .dvh{font-size:10px;text-align:right;font-weight:700}
+.label .ln{display:flex;justify-content:space-between;font-size:12px;padding:1px 0;
+  border-top:1px solid #000}
+.label .ln.sub{padding-left:12px;font-weight:400}
+.label .ln.sub2{padding-left:24px;font-weight:400}
+.label .ln b{font-weight:700}
+.label .foot{font-size:9px;line-height:1.25;margin-top:3px}
+.label .ingr{font-size:9.5px;line-height:1.3;margin-top:3px}
+@media print{
+  @page{margin:12mm}
+  body{background:#fff}
+  body *{visibility:hidden}
+  #print-area,#print-area *{visibility:visible !important}
+  #print-area{position:absolute;left:0;top:0}
+  #print-area .label{box-shadow:none;page-break-inside:avoid}
+  .noprint{display:none !important}
+  .panel{border:0 !important;padding:0 !important;background:none !important}
+  .tabs,.stats,.saverow,#sliders,.readout,.chips,.modal{display:none !important}
+  [hidden]{display:none !important}
+  section#v-batch, section#v-batch[hidden]{display:block !important}
+}
+@media (max-width:560px){.row label{width:88px;font-size:13.5px}.wrap{padding:24px 16px 48px}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Shake formula</h1>
+<p class="sub">Chocolate meal replacement &middot; whey, milk powder, oats, chia</p>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" id="t-build" aria-controls="v-build" aria-selected="true">Build</button>
+  <button class="tab" role="tab" id="t-batch" aria-controls="v-batch" aria-selected="false">Batch</button>
+  <button class="tab" role="tab" id="t-day" aria-controls="v-day" aria-selected="false">Your day</button>
+  <button class="tab" role="tab" id="t-inv" aria-controls="v-inv" aria-selected="false">Inventory</button>
+</div>
+
+<section id="v-build" role="tabpanel" aria-labelledby="t-build">
+  <p class="grp">Cut-oriented</p>
+  <div class="chips" id="c-cut"></div>
+  <p class="grp">Flavor-led</p>
+  <div class="chips" id="c-taste"></div>
+  <p class="grp">Other</p>
+  <div class="chips" id="c-nut"></div>
+  <p class="grp">Saved</p>
+  <div class="chips" id="c-mine"></div>
+  <div class="saverow">
+    <input type="text" id="save-name" placeholder="Name this formula" maxlength="28">
+    <button class="chip" type="button" id="save-go">Save as new</button>
+    <button class="chip" type="button" id="save-update" hidden>Update</button>
+    <button class="chip" type="button" id="save-revert" hidden>Revert</button>
+  </div>
+  <p class="note" style="margin-top:0;border-top:0;padding-top:0" id="save-msg"></p>
+
+  <div class="stats">
+    <div class="stat"><div class="k">Calories</div><div class="v" id="m-cal">0</div></div>
+    <div class="stat"><div class="k">Protein</div><div class="v" id="m-pro">0</div></div>
+    <div class="stat"><div class="k">Fat</div><div class="v" id="m-fat">0</div></div>
+    <div class="stat"><div class="k">Fiber</div><div class="v" id="m-fib">0</div></div>
+    <div class="stat"><div class="k">Cost</div><div class="v" id="m-cost">0</div></div>
+  </div>
+
+  <div id="sliders"></div>
+  <div class="divide">
+    <div class="row"><label for="s-oz">Liquid</label>
+      <input type="range" id="s-oz" min="6" max="16" step="1" value="12"><output id="v-oz">12 oz</output></div>
+  </div>
+
+  <div class="readout">
+    <span>Whey share <b id="m-whey">&mdash;</b></span>
+    <span>Chalk risk <b id="m-chalk">&mdash;</b></span>
+    <span>Density <b id="m-dens">&mdash;</b></span>
+    <span>Caffeine <b id="m-caf">&mdash;</b></span>
+    <span>Dry mix <b id="m-dry">&mdash;</b></span>
+    <span>Runs out after <b id="m-lim">&mdash;</b></span>
+  </div>
+</section>
+
+<section id="v-batch" role="tabpanel" aria-labelledby="t-batch" hidden>
+  <p class="grp">Batch size</p>
+  <div class="chips" id="c-batch"></div>
+
+  <div class="panel">
+    <h2 id="batch-title">Batch</h2>
+    <table>
+      <thead><tr><th>Ingredient</th><th style="text-align:right">Weigh</th><th style="text-align:right">Roughly</th></tr></thead>
+      <tbody id="batch-rows"></tbody>
+      <tfoot><tr><td>Total dry mix</td><td class="n" id="batch-total"></td><td class="u" id="batch-scoop"></td></tr></tfoot>
+    </table>
+    <p class="note" id="batch-note"></p>
+    <div class="chips" style="margin:16px 0 0">
+      <button class="chip" type="button" id="batch-make">Make this batch</button>
+      <button class="chip" type="button" id="batch-one">Make one shake</button>
+    </div>
+    <p class="note" id="batch-stock" style="margin-top:14px"></p>
+  </div>
+
+  <div class="panel">
+    <h2 class="noprint">Label</h2>
+    <div class="chips noprint" id="c-basis" style="margin-bottom:14px"></div>
+    <div id="print-area"><div class="label" id="nutlabel"></div></div>
+    <div class="chips noprint" style="margin-top:16px">
+      <button class="chip" type="button" id="label-print">Print label</button>
+      <button class="chip" type="button" id="label-date">Set date to today</button>
+    </div>
+    <p class="note noprint">Tape it to the container. Values are per shake, calculated from the formula on the Build tab.</p>
+  </div>
+
+  <div class="panel noprint">
+    <h2>Estimated lead</h2>
+    <div id="pb-body"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Making it</h2>
+    <ol>
+      <li id="step-toast">Toast the oat flour.</li>
+      <li>Weigh everything into a large bowl. Whisk two full minutes &mdash; longer than feels necessary. Uneven mixing is the main way a batch goes wrong.</li>
+      <li>Transfer to an airtight opaque container. Cool cupboard, not the fridge; condensation is a bigger enemy than warmth.</li>
+      <li>Stir the container before each scoop. Fine powders settle, and cocoa sinks fastest.</li>
+      <li id="step-shake">Per shake: liquid into the blender first, then the powder. Room temperature, not cold &mdash; whey resists cold liquid and clumps. Blend 30&ndash;45 seconds, add ice after.</li>
+      <li>Rest 15&ndash;20 minutes in the fridge before drinking. It thickens considerably and is easier on your stomach.</li>
+    </ol>
+    <p class="note">Multivitamin taken separately, a couple of hours apart &mdash; the calcium and phytates here suppress iron absorption.</p>
+  </div>
+</section>
+
+<section id="v-day" role="tabpanel" aria-labelledby="t-day" hidden>
+  <div class="panel">
+    <h2>Daily plan</h2>
+    <div id="day-sliders"></div>
+    <div class="readout">
+      <span>From shakes <b id="d-shake">&mdash;</b></span>
+      <span>Left for food <b id="d-food">&mdash;</b></span>
+      <span>Protein total <b id="d-pro">&mdash;</b></span>
+      <span>Per kg <b id="d-gkg">&mdash;</b></span>
+      <span>Loss rate <b id="d-rate">&mdash;</b></span>
+      <span>200 &rarr; 175 lb <b id="d-eta">&mdash;</b></span>
+    </div>
+    <p class="note">Protein total assumes your food averages 25% of its calories from protein. Maintenance is a guess until three weeks of logging against weekly weigh-ins says otherwise.</p>
+  </div>
+</section>
+
+<section id="v-inv" role="tabpanel" aria-labelledby="t-inv" hidden>
+  <div class="stats">
+    <div class="stat"><div class="k">Shakes left</div><div class="v" id="i-left">0</div></div>
+    <div class="stat"><div class="k">Runs out</div><div class="v" id="i-when" style="font-size:19px">&mdash;</div></div>
+    <div class="stat"><div class="k">Reorder</div><div class="v" id="i-what" style="font-size:19px">&mdash;</div></div>
+    <div class="stat"><div class="k">On hand</div><div class="v" id="i-value">$0</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>What you have</h2>
+    <table>
+      <thead><tr><th>Ingredient</th><th style="text-align:right">On hand</th><th style="padding-left:18px">Runway</th><th style="text-align:right">Restock</th></tr></thead>
+      <tbody id="inv-rows"></tbody>
+    </table>
+    <p class="note" id="inv-note"></p>
+  </div>
+
+  <div class="panel">
+    <h2>Log usage</h2>
+    <div class="row" style="margin-bottom:16px">
+      <label for="s-week">Shakes per week</label>
+      <input type="range" id="s-week" min="1" max="21" step="1" value="7"><output id="v-week">7</output>
+    </div>
+    <div class="chips">
+      <button class="chip" type="button" id="log-1">Made one shake</button>
+      <button class="chip" type="button" id="log-batch">Made a batch</button>
+      <button class="chip" type="button" id="log-undo">Undo last</button>
+      <button class="chip" type="button" id="log-cart">Reset to cart order</button>
+      <button class="chip" type="button" id="log-reset">Clear all stock</button>
+    </div>
+    <p class="note" id="log-note">Stock saves in this browser on this computer. Opening the file elsewhere starts fresh.</p>
+  </div>
+
+  <div class="panel">
+    <h2>History</h2>
+    <p class="note" style="margin-top:0;border-top:0;padding-top:0" id="hist-summary">Nothing logged yet.</p>
+    <div class="chips" style="margin-top:14px">
+      <button class="chip" type="button" id="open-log">Open batch log</button>
+    </div>
+  </div>
+</section>
+</div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="sheet">
+    <header>
+      <h2 id="modal-title">Batch log</h2>
+      <button class="xbtn" type="button" id="modal-x" aria-label="Close">&times;</button>
+    </header>
+    <div class="body">
+      <table>
+        <thead><tr><th>When</th><th>Formula</th><th style="text-align:right">Size</th>
+          <th style="text-align:right">Per shake</th><th style="text-align:right">Cost</th></tr></thead>
+        <tbody id="log-rows"></tbody>
+      </table>
+      <p class="empty" id="log-empty" hidden>No batches logged yet. Use &ldquo;Make this batch&rdquo; on the Batch tab.</p>
+    </div>
+    <footer>
+      <button class="chip" type="button" id="log-csv">Download CSV</button>
+      <button class="chip" type="button" id="log-clear">Clear log</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+const ING={
+ whey :{n:'Whey isolate', cal:3.93,p:.893,f:0,   fat:.018,cost:106.99/2268,pkg:2268,max:45,tbsp:7.5},
+ milk :{n:'Milk powder',  cal:3.60,p:.360,f:0,   fat:.008,cost:27.48/1638, pkg:1638,max:45,tbsp:5.3},
+ oat  :{n:'Oat flour',    cal:3.80,p:.130,f:.10, fat:.070,cost:19.96/2268, pkg:2268,max:60,tbsp:5.6},
+ pb2  :{n:'PB powder',    cal:4.706,p:.588,f:.118,fat:.118,cost:27.54/1814,pkg:1814,max:28,tbsp:6.0},
+ cocoa:{n:'Cocoa',        cal:2.28,p:.196,f:.33, fat:.137,cost:15.49/454,  pkg:454, max:16,tbsp:5.5},
+ malt :{n:'Malted milk',  cal:4.00,p:.100,f:0,   fat:.050,cost:19.00/1234, pkg:1234,max:40,tbsp:9.0},
+ chia :{n:'Chia',         cal:4.86,p:.165,f:.34, fat:.307,cost:5.07/454,   pkg:454, max:20,tbsp:12.0,thick:2.5},
+ sweet:{n:'Sweetener',    cal:0.40,p:0,   f:0,   fat:0,   cost:29.94/1361, pkg:1361,max:20,tbsp:12.0},
+ ban  :{n:'Banana powder',cal:3.50,p:.040,f:.07, fat:.015,cost:15.00/340,  pkg:340, max:30,tbsp:8.0},
+ esp  :{n:'Espresso (dry)',cal:3.50,p:.140,f:0,  fat:0,   cost:0.03,       pkg:340, max:4, tbsp:5.0},
+ salt :{n:'Salt',         cal:0,   p:0,   f:0,   fat:0,   cost:0.002,      pkg:400, max:3, tbsp:6.0},
+ huel :{n:'Huel Black',   cal:4.444,p:.444,f:.078,fat:.189,cost:0.044,     pkg:1750,max:90,tbsp:7.0,thick:2},
+ // Xanthan: It's Just! 8 oz (227 g) $8.99. Nutrition is a typical value, not this bag's label; at under 1 g it barely registers.
+ // thick: a few tenths of a gram thickens like several grams of other powders. Rough.
+ xan  :{n:'Xanthan gum',  cal:3.30,p:0,   f:.78, fat:0,   cost:8.99/227,   pkg:227, max:2, tbsp:9.0,step:0.1,thick:40}
+};
+const KEYS=Object.keys(ING);
+// per gram: carb, sugar, satfat, sodium mg, calcium mg, iron mg, potassium mg, vitD mcg; as = added sugar (PB: Micro Ingredients label, 17 g scoop)
+const MICRO={
+ whey :{c:.036,su:.036,sf:.004,na:1.61,ca:6.96,fe:0,   k:1.5, vd:0},
+ milk :{c:.520,su:.520,sf:.005,na:5.50,ca:12.57,fe:.003,k:17.9,vd:.11},
+ oat  :{c:.660,su:.010,sf:.012,na:0.02,ca:0.55,fe:.040,k:3.7, vd:0},
+ pb2  :{c:.294,su:.059,sf:0,   na:0,   ca:1.18,fe:.024,k:11.8,vd:0,as:0},
+ cocoa:{c:.579,su:.018,sf:.081,na:0.21,ca:1.28,fe:.139,k:15.2,vd:0},
+ malt :{c:.780,su:.570,sf:.025,na:3.52,ca:2.00,fe:.015,k:7.0, vd:0},
+ chia :{c:.420,su:0,   sf:.033,na:0.16,ca:6.31,fe:.077,k:4.1, vd:0},
+ ban  :{c:.880,su:.450,sf:.006,na:0.03,ca:0.22,fe:.012,k:14.9,vd:0},
+ sweet:{c:1.00,su:0,   sf:0,   na:0,   ca:0,   fe:0,   k:0,   vd:0},
+ esp  :{c:.100,su:0,   sf:0,   na:0.10,ca:1.30,fe:.050,k:20.0,vd:0},
+ salt :{c:0,   su:0,   sf:0,   na:387.6,ca:0,  fe:0,   k:0,   vd:0},
+ huel :{c:.189,su:.044,sf:.033,na:3.90,ca:3.60,fe:.050,k:10.0,vd:.056},
+ xan  :{c:.780,su:0,   sf:0,   na:0,   ca:0,   fe:0,   k:0,   vd:0}};
+const DV={fat:78,sf:20,na:2300,c:275,fib:28,p:50,ca:1300,fe:18,k:4700,vd:20};
+// Lead, ug per gram. lo/hi = observed range in published testing of that food category.
+// src: what the range is drawn from. null = no figure at all. Entries with est:true are rough
+// estimates of typical levels for that kind of food (Nov 2026), not testing of these products.
+const PB={
+ huel :{lo:.070,hi:.070,cdlo:.1022,cdhi:.1022,src:'CR 2025 measured Huel Black Edition: 6.3 ug lead, 9.2 ug cadmium per 90 g'},
+ cocoa:{lo:.077,hi:.324,cdlo:.017,cdhi:.095,src:'USITC survey of cocoa powders (lead 77-324 ppb, cadmium 17-95 ppb)'},
+ // Unflavored isolate: CR 2025 tested chocolate whey powders, where cocoa drives the lead, so that figure doesn't apply.
+ whey :{lo:.002,hi:.015,cdlo:null,cdhi:null,est:true,src:'estimate 2-15 ppb; Clean Label Project 2025 found whey and unflavored/vanilla powders lowest'},
+ milk :{lo:.003,hi:.015,cdlo:null,cdhi:null,est:true,src:'estimate 3-15 ppb; fluid milk ~0.5-2 ppb concentrated ~9x when dried'},
+ oat  :{lo:.005,hi:.020,cdlo:null,cdhi:null,est:true,src:'estimate 5-20 ppb, typical cereal grain range'},
+ pb2  :{lo:.005,hi:.030,cdlo:null,cdhi:null,est:true,src:'estimate 5-30 ppb for peanuts; bag carries a Prop 65 lead warning, so likely toward the high end'},
+ chia :{lo:.005,hi:.050,cdlo:null,cdhi:null,est:true,src:'estimate 5-50 ppb; ConsumerLab 2026 found chia generally low, one brand 2-3x others'},
+ ban  :{lo:.001,hi:.010,cdlo:null,cdhi:null,est:true,src:'estimate 1-10 ppb; FDA FY2021 banana baby foods below detection, concentrated by drying'},
+ malt :{lo:.005,hi:.020,cdlo:null,cdhi:null,est:true,src:'estimate 5-20 ppb, grain plus milk'},
+ sweet:{lo:0,hi:.010,cdlo:null,cdhi:null,est:true,src:'estimate 0-10 ppb'},
+ esp  :{lo:null,hi:null,cdlo:null,cdhi:null,src:null},
+ salt :{lo:0,hi:.050,cdlo:null,cdhi:null,est:true,src:'estimate 0-50 ppb for refined salt'},
+ xan  :{lo:null,hi:null,cdlo:null,cdhi:null,src:null}};
+// label copy: display name, sub-ingredients as printed on each package, allergens
+Object.keys(ING).forEach(k=>{
+  if(!PB[k])PB[k]={lo:null,hi:null,cdlo:null,cdhi:null,src:null};
+  if(PB[k].cdlo===undefined)PB[k].cdlo=null;
+  if(PB[k].cdhi===undefined)PB[k].cdhi=null;
+  if(PB[k].lo===undefined)PB[k].lo=null;
+  if(PB[k].hi===undefined)PB[k].hi=null;});
+const DECL={
+ whey :{n:'Whey Protein Isolate',sub:'Sunflower Lecithin',al:['Milk']},
+ milk :{n:'Nonfat Dry Milk',sub:'Vitamin A Palmitate, Vitamin D3',al:['Milk']},
+ oat  :{n:'Whole Grain Oat Flour',sub:'',al:[]},
+ pb2  :{n:'Peanut Butter Powder',sub:'Roasted Peanut Flour',al:['Peanuts']},
+ cocoa:{n:'Dutch Process Cocoa',sub:'',al:[]},
+ malt :{n:'Malted Milk Powder',sub:'Wheat Flour, Malted Barley Extract, Milk, Soy Lecithin, Salt, Sodium Bicarbonate',al:['Milk','Wheat','Soy']},
+ chia :{n:'Chia Seeds',sub:'',al:[]},
+ ban  :{n:'Freeze-Dried Banana',sub:'',al:[]},
+ sweet:{n:'Monk Fruit Sweetener',sub:'Allulose, Monk Fruit Extract',al:[]},
+ esp  :{n:'Ground Decaffeinated Coffee',sub:'',al:[]},
+ salt :{n:'Salt',sub:'',al:[]},
+ huel :{n:'Huel Black Edition',sub:'Pea Protein, Faba Bean Protein, Ground Flaxseed, Tapioca Starch, MCT Powder, Vitamin and Mineral Blend',al:['Coconut']},
+ xan  :{n:'Xanthan Gum',sub:'',al:[]}};
+const CUT={
+ 'High satiety':{whey:30,milk:24,oat:14,pb2:12,cocoa:9,malt:5,chia:12,sweet:10,ban:0,esp:0,salt:1,huel:0,oz:12},
+ 'Cut light':{whey:28,milk:22,oat:8,pb2:8,cocoa:8,malt:4,chia:8,sweet:8,ban:0,esp:0,salt:1,huel:0,oz:10}};
+const TASTE={
+ 'Banana malt':{whey:22,milk:32,oat:6,pb2:12,cocoa:6,malt:6,chia:8,sweet:6,ban:20,esp:0,salt:1,huel:0,oz:11},
+ 'Huel mocha':{whey:18,milk:22,oat:8,pb2:12,cocoa:5,malt:8,chia:6,sweet:10,ban:0,esp:0,salt:1,huel:15,oz:12},
+ 'Huel malt':{whey:16,milk:24,oat:10,pb2:10,cocoa:4,malt:16,chia:6,sweet:8,ban:0,esp:0,salt:1,huel:15,oz:12},
+ 'Huel light':{whey:14,milk:18,oat:6,pb2:10,cocoa:4,malt:6,chia:5,sweet:8,ban:12,esp:0,salt:1,huel:10,oz:10},
+ 'Huel forward':{whey:14,milk:20,oat:5,pb2:14,cocoa:3,malt:10,chia:5,sweet:10,ban:16,esp:0,salt:1,huel:20,oz:13},
+ 'Banana PB + Huel':{whey:16,milk:22,oat:5,pb2:14,cocoa:5,malt:10,chia:5,sweet:10,ban:18,esp:0,salt:1,huel:20,oz:14},
+ 'Huel PB':{whey:18,milk:6,oat:4,pb2:27,cocoa:0,malt:5,chia:10,sweet:3,ban:3,esp:0,salt:1,huel:19,oz:11},
+ 'Huel lean':{whey:16,milk:20,oat:0,pb2:12,cocoa:5,malt:8,chia:4,sweet:9,ban:16,esp:0,salt:1,huel:20,oz:12},
+ 'Banana PB':{whey:22,milk:22,oat:15,pb2:16,cocoa:6,malt:10,chia:6,sweet:10,ban:18,esp:0,salt:1,huel:0,oz:14},
+ 'Banana PB mishap':{whey:22,milk:5,oat:15,pb2:16,cocoa:8,malt:30,chia:8,sweet:16,ban:18,esp:0,salt:1,huel:0,oz:15},
+ 'Cover the whey':{whey:22,milk:34,oat:8,pb2:14,cocoa:10,malt:8,chia:8,sweet:12,ban:0,esp:0,salt:1,huel:0,oz:11},
+ 'Silky':{whey:28,milk:22,oat:16,pb2:14,cocoa:9,malt:8,chia:12,sweet:10,ban:0,esp:0,salt:1,huel:0,oz:11},
+ 'Chocolate malt':{whey:26,milk:26,oat:20,pb2:6,cocoa:10,malt:12,chia:6,sweet:10,ban:0,esp:0,salt:1,huel:0,oz:11},
+ 'Peanut cup':{whey:26,milk:26,oat:18,pb2:18,cocoa:8,malt:6,chia:6,sweet:10,ban:0,esp:0,salt:1,huel:0,oz:11},
+ 'Mocha':{whey:28,milk:28,oat:20,pb2:4,cocoa:10,malt:6,chia:6,sweet:10,ban:0,esp:2,salt:1,huel:0,oz:11}};
+const NUT={
+ 'Balanced':{whey:28,milk:30,oat:25,pb2:8,cocoa:6,malt:5,chia:7,sweet:8,ban:0,esp:0,salt:1,huel:0,oz:10},
+ 'Budget':{whey:18,milk:40,oat:35,pb2:10,cocoa:6,malt:6,chia:7,sweet:8,ban:0,esp:0,salt:1,huel:0,oz:11},
+ 'Huel Black only':{whey:0,milk:0,oat:0,pb2:0,cocoa:0,malt:0,chia:0,sweet:0,ban:0,esp:0,salt:0,huel:90,oz:16},
+ 'Max fiber':{whey:26,milk:28,oat:30,pb2:8,cocoa:8,malt:4,chia:12,sweet:8,ban:0,esp:0,salt:1,huel:0,oz:12}};
+const MINE_KEY='shakeCustom.v1', LOG_KEY='shakeLog.v1', OVER_KEY='shakeOverrides.v1';
+function jload(key,fb){try{const r=localStorage.getItem(key);return r?JSON.parse(r):fb;}catch(e){return fb;}}
+function jsave(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+// Formulas saved before an ingredient existed lack its key; treat it as 0 g.
+function fillKeys(f){KEYS.forEach(k=>{if(typeof f[k]!=='number')f[k]=0;});return f;}
+[CUT,TASTE,NUT].forEach(G=>Object.values(G).forEach(fillKeys));
+const BUILTIN=JSON.parse(JSON.stringify(Object.assign({},CUT,TASTE,NUT)));
+const GROUPS={CUT:CUT,TASTE:TASTE,NUT:NUT};
+let OVER=jload(OVER_KEY,{});Object.values(OVER).forEach(fillKeys);
+Object.keys(OVER).forEach(n=>{for(const gk in GROUPS)if(GROUPS[gk][n])GROUPS[gk][n]=OVER[n];});
+const ALL=Object.assign({},CUT,TASTE,NUT);
+const BATCH={'Single':1,'3 days':3,'One week':7,'Two weeks':14,'Four weeks':28};
+let batchN=14;
+
+function chips(host,obj,cb,pressed){
+  const el=document.getElementById(host);
+  Object.keys(obj).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='chip';b.type='button';b.textContent=k;b.dataset.k=k;
+    b.setAttribute('aria-pressed',k===pressed?'true':'false');
+    b.addEventListener('click',()=>cb(k));
+    el.appendChild(b);
+  });
+}
+let selected=null;
+function applyPreset(k){
+  selected=k;
+  KEYS.forEach(x=>document.getElementById('s-'+x).value=ALL[k][x]);
+  document.getElementById('s-oz').value=ALL[k].oz;paint();
+}
+chips('c-cut',CUT,applyPreset,'High satiety');
+chips('c-taste',TASTE,applyPreset);
+chips('c-nut',NUT,applyPreset);
+chips('c-batch',BATCH,k=>{batchN=BATCH[k];
+  document.querySelectorAll('#c-batch .chip').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));
+  paint();},'Two weeks');
+
+const sl=document.getElementById('sliders');
+KEYS.forEach(k=>{const i=ING[k];const d=document.createElement('div');d.className='row';
+  d.innerHTML='<label for="s-'+k+'">'+i.n+'</label>'+
+    '<input type="range" id="s-'+k+'" min="0" max="'+i.max+'" step="'+(i.step||1)+'" value="'+CUT['High satiety'][k]+'">'+
+    '<output id="v-'+k+'">0 g</output>';
+  sl.appendChild(d);});
+
+const DAY=[['tgt','Daily target',1400,2600,1800,50],['n','Shakes per day',0,3,2,1],['maint','Maintenance',2100,2900,2450,50]];
+document.getElementById('day-sliders').innerHTML=DAY.map(d=>
+  '<div class="row"><label for="s-'+d[0]+'">'+d[1]+'</label>'+
+  '<input type="range" id="s-'+d[0]+'" min="'+d[2]+'" max="'+d[3]+'" step="'+d[5]+'" value="'+d[4]+'">'+
+  '<output id="v-'+d[0]+'" style="min-width:52px">0</output></div>').join('');
+
+function toTbsp(g,per){
+  const t=g/per;
+  if(t<0.25) return Math.max(1,Math.round(t*24))/8+' tsp';
+  if(t<1) return (Math.round(t*4)/4)+' tbsp';
+  if(t<4) return (Math.round(t*2)/2)+' tbsp';
+  const c=t/16;
+  if(c>=0.75) return (Math.round(c*4)/4)+' cup';
+  return Math.round(t)+' tbsp';
+}
+function paint(){
+  let cal=0,p=0,fib=0,fat=0,cost=0,dry=0,lim=1e9,ln='';
+  const g={};
+  KEYS.forEach(k=>{const v=+document.getElementById('s-'+k).value,i=ING[k];g[k]=v;
+    document.getElementById('v-'+k).textContent=v+' g';
+    cal+=i.cal*v;p+=i.p*v;fib+=i.f*v;fat+=i.fat*v;cost+=i.cost*v;dry+=v;
+    if(v>0&&i.pkg>500){const s=i.pkg/v;if(s<lim){lim=s;ln=i.n}}});
+  const oz=+document.getElementById('s-oz').value;
+  document.getElementById('v-oz').textContent=oz+' oz';
+
+  document.getElementById('m-cal').textContent=Math.round(cal);
+  document.getElementById('m-pro').textContent=Math.round(p)+'g';
+  document.getElementById('m-fat').textContent=Math.round(fat)+'g';
+  document.getElementById('m-fib').textContent=Math.round(fib)+'g';
+  document.getElementById('m-cost').textContent='$'+cost.toFixed(2);
+  document.getElementById('m-dry').textContent=Math.round(dry)+' g';
+  document.getElementById('m-lim').textContent=Math.round(lim)+' shakes ('+ln+')';
+  document.getElementById('m-caf').textContent=Math.round(g.cocoa*2.3+g.esp*0.3)+' mg';
+
+  const wr=dry>0?g.whey/dry*100:0, we=document.getElementById('m-whey');
+  we.textContent=wr.toFixed(0)+'% of mix'+(g.milk>0?', '+(g.whey/g.milk).toFixed(2)+'\u00D7 milk':'');
+  we.className=wr>26?'bad':wr>20?'warn':'ok';
+  const ci=(g.milk+g.oat)-2*fat,ce=document.getElementById('m-chalk');
+  ce.textContent=ci>52?'high':ci>36?'moderate':'low';
+  ce.className=ci>52?'bad':ci>36?'warn':'ok';
+  // thick: how much a gram thickens vs a plain powder. Huel's pea protein and flax absorb water
+  // (Huel's own 90 g in ~17 oz drinks medium-thick), so it counts 2x. Chia gels to many times
+  // its weight: 2.5x. Xanthan: a few tenths of a gram goes a long way: 40x.
+  const dn=KEYS.reduce((a,k)=>a+g[k]*(ING[k].thick||1),0)/oz,de=document.getElementById('m-dens');
+  de.textContent=(dn>14?'sludgy ':dn<9?'thin ':'good ')+dn.toFixed(1);
+  de.className=(dn>14||dn<9)?'warn':'ok';
+
+  document.querySelectorAll('#c-cut .chip,#c-taste .chip,#c-nut .chip').forEach(b=>{
+    const on=KEYS.every(k=>g[k]===ALL[b.dataset.k][k])&&oz===ALL[b.dataset.k].oz;
+    b.setAttribute('aria-pressed',String(on));
+    if(!b.dataset.base)b.dataset.base=b.textContent.replace(/ \u00B7 edited$/,'');
+    b.textContent=b.dataset.base+(OVER[b.dataset.k]?' \u00B7 edited':'');});
+  refreshEditBar();
+
+  const rows=KEYS.filter(k=>g[k]>0).map(k=>{const t=g[k]*batchN;
+    return '<tr><td>'+ING[k].n+'</td><td class="n">'+(t>=1000?(t/1000).toFixed(2)+' kg':(t<10?+t.toFixed(1):Math.round(t))+' g')+
+      '</td><td class="u">'+toTbsp(t,ING[k].tbsp)+'</td></tr>';}).join('');
+  document.getElementById('batch-rows').innerHTML=rows;
+  const tot=dry*batchN;
+  document.getElementById('batch-total').textContent=tot>=1000?(tot/1000).toFixed(2)+' kg':Math.round(tot)+' g';
+  document.getElementById('batch-scoop').textContent=Math.round(dry)+' g per shake';
+  document.getElementById('batch-title').textContent=batchN===1?'One shake':batchN+' shakes';
+  document.getElementById('batch-note').textContent='Ingredient cost $'+(cost*batchN).toFixed(2)+
+    ' for this batch, $'+cost.toFixed(2)+' per shake. Weigh each scoop at '+Math.round(dry)+
+    ' g rather than using a volume measure \u2014 these powders differ enough in density that a cup scoop drifts.';
+  document.getElementById('step-toast').textContent=g.oat>0
+    ? 'Toast '+Math.round(g.oat*batchN)+' g of oat flour: spread no more than half an inch deep, 300\u00B0F, 12\u201315 minutes, stirring every 5. Cool completely before mixing \u2014 residual heat puts moisture into the milk powder.'
+    : 'No oat flour in this formula, so nothing to toast.';
+  document.getElementById('step-shake').textContent='Per shake: '+oz+' oz liquid into the blender first, then '+
+    Math.round(dry)+' g of powder. Room temperature, not cold \u2014 whey resists cold liquid and clumps. Blend 30\u201345 seconds, add ice after.';
+
+  const tgt=+document.getElementById('s-tgt').value,n=+document.getElementById('s-n').value,mt=+document.getElementById('s-maint').value;
+  document.getElementById('v-tgt').textContent=tgt;
+  document.getElementById('v-n').textContent=n;
+  document.getElementById('v-maint').textContent=mt;
+  const sc=cal*n,food=tgt-sc,fp=Math.max(0,food)*0.25/4,tp=p*n+fp;
+  document.getElementById('d-shake').textContent=Math.round(sc)+' cal';
+  const fe=document.getElementById('d-food');
+  fe.textContent=Math.round(food)+' cal';
+  fe.className=food<400?'bad':food<700?'warn':'';
+  document.getElementById('d-pro').textContent='~'+Math.round(tp)+' g';
+  const gkg=tp/90.7,ge=document.getElementById('d-gkg');
+  ge.textContent=gkg.toFixed(1)+' g/kg';
+  ge.className=(gkg<1.6||gkg>2.4)?'warn':'ok';
+  const rate=(mt-tgt)*7/3500;
+  document.getElementById('d-rate').textContent=rate<=0?'gaining':rate.toFixed(1)+' lb/wk';
+  document.getElementById('d-eta').textContent=rate<=0?'\u2014':Math.round(25/rate)+' weeks';
+  if(typeof paintInv==='function')paintInv();
+  if(typeof renderLabel==='function')renderLabel();
+  if(typeof renderLead==='function')renderLead();
+}
+KEYS.concat(['oz','tgt','n','maint']).forEach(k=>
+  document.getElementById('s-'+k).addEventListener('input',paint));
+
+const STORE='shakeStock.v1';
+const CART={whey:2268,milk:1638,oat:2268,pb2:1814,cocoa:454,chia:454,malt:1234,sweet:1361,ban:340,esp:340,salt:400,huel:5250,xan:227};
+let stock={},lastState=null,memOnly=false;
+function loadStock(){
+  let found=false;
+  try{const r=localStorage.getItem(STORE);if(r){stock=JSON.parse(r);found=true;}}
+  catch(e){memOnly=true;}
+  if(!found)stock=Object.assign({},CART);
+  KEYS.forEach(k=>{if(typeof stock[k]!=='number')stock[k]=0;});
+}
+function saveStock(){
+  try{localStorage.setItem(STORE,JSON.stringify(stock));}
+  catch(e){memOnly=true;
+    document.getElementById('log-note').textContent=
+      'Storage is blocked here, so stock resets when you close the tab. Save the file to your computer and open it directly to keep it.';}
+}
+loadStock();
+
+const inv=document.getElementById('inv-rows');
+KEYS.forEach(k=>{const i=ING[k];const tr=document.createElement('tr');
+  tr.innerHTML='<td>'+i.n+'</td>'+
+    '<td class="n"><input type="number" id="q-'+k+'" min="0" step="10" value="0" '+
+      'style="width:78px;text-align:right;font:inherit;font-variant-numeric:tabular-nums;padding:3px 6px;'+
+      'border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:inherit"> g</td>'+
+    '<td class="b"><div class="blabel"><span id="r-'+k+'">&mdash;</span><b id="w-'+k+'"></b></div>'+
+      '<div class="bar"><i id="f-'+k+'" style="width:0%"></i></div></td>'+
+    '<td class="u"><button class="chip" type="button" id="p-'+k+'" style="padding:3px 10px;font-size:13px">'+
+      '+'+(i.pkg>=1000?(i.pkg/1000).toFixed(2).replace(/0$/,'')+' kg':i.pkg+' g')+'</button></td>';
+  inv.appendChild(tr);});
+
+KEYS.forEach(k=>{
+  document.getElementById('q-'+k).addEventListener('input',e=>{
+    stock[k]=Math.max(0,+e.target.value||0);saveStock();paintInv();});
+  document.getElementById('p-'+k).addEventListener('click',()=>{
+    lastState=Object.assign({},stock);
+    stock[k]+=ING[k].pkg;saveStock();syncInputs();paintInv();});
+});
+function syncInputs(){KEYS.forEach(k=>document.getElementById('q-'+k).value=Math.round(stock[k]));}
+function shortfall(mult){
+  return KEYS.filter(k=>{const g=+document.getElementById('s-'+k).value;
+    return g>0 && stock[k] < g*mult;})
+    .map(k=>ING[k].n+' (short '+Math.ceil(+document.getElementById('s-'+k).value*mult-stock[k])+' g)');
+}
+function consume(mult,echo){
+  const gaps=shortfall(mult);
+  if(gaps.length){
+    if(echo)document.getElementById(echo).innerHTML=
+      '<span class="bad">Not enough on hand \u2014 '+gaps.join(', ')+
+      '. Add stock on the Inventory tab first.</span>';
+    return;
+  }
+  lastState=Object.assign({},stock);
+  const grams={};let cal=0,pr=0,fat=0,fib=0,cost=0,dry=0;
+  KEYS.forEach(k=>{const g=+document.getElementById('s-'+k).value,i=ING[k];
+    grams[k]=g;stock[k]=Math.max(0,stock[k]-g*mult);
+    cal+=i.cal*g;pr+=i.p*g;fat+=i.fat*g;fib+=i.f*g;cost+=i.cost*g;dry+=g;});
+  LOG.unshift({t:Date.now(),name:currentName(),n:mult,oz:+document.getElementById('s-oz').value,
+    cal:Math.round(cal),p:Math.round(pr),fat:Math.round(fat),fib:Math.round(fib),
+    cost:+cost.toFixed(3),dry:Math.round(dry),grams:grams});
+  if(LOG.length>300)LOG.length=300;
+  jsave(LOG_KEY,LOG);
+  saveStock();syncInputs();paintInv();renderLog();
+  if(echo)document.getElementById(echo).innerHTML=
+    '<span class="ok">Logged '+(mult===1?'one shake':mult+' shakes')+
+    '.</span> Undo on the Inventory tab.';
+}
+document.getElementById('log-1').addEventListener('click',()=>consume(1));
+document.getElementById('log-batch').addEventListener('click',()=>consume(batchN));
+document.getElementById('batch-make').addEventListener('click',()=>consume(batchN,'batch-stock'));
+document.getElementById('batch-one').addEventListener('click',()=>consume(1,'batch-stock'));
+document.getElementById('log-undo').addEventListener('click',()=>{
+  if(!lastState)return;stock=Object.assign({},lastState);lastState=null;saveStock();syncInputs();paintInv();});
+document.getElementById('log-cart').addEventListener('click',()=>{
+  lastState=Object.assign({},stock);
+  stock=Object.assign({},CART);saveStock();syncInputs();paintInv();});
+document.getElementById('log-reset').addEventListener('click',()=>{
+  lastState=Object.assign({},stock);
+  KEYS.forEach(k=>stock[k]=0);saveStock();syncInputs();paintInv();});
+document.getElementById('s-week').addEventListener('input',paintInv);
+
+let MINE=jload(MINE_KEY,{}),LOG=jload(LOG_KEY,[]);Object.values(MINE).forEach(fillKeys);
+
+function currentFormula(){
+  const o={};KEYS.forEach(k=>o[k]=+document.getElementById('s-'+k).value);
+  o.oz=+document.getElementById('s-oz').value;return o;
+}
+function matches(a,b){return KEYS.every(k=>a[k]===b[k])&&a.oz===b.oz;}
+function currentName(){
+  const c=currentFormula();
+  for(const k in MINE)if(matches(c,MINE[k]))return k;
+  for(const k in ALL)if(matches(c,ALL[k]))return k;
+  return 'Custom';
+}
+function renderMine(){
+  const host=document.getElementById('c-mine');host.innerHTML='';
+  const names=Object.keys(MINE);
+  if(!names.length){host.innerHTML='<span style="font-size:13.5px;color:var(--faint)">'+
+    'Adjust the sliders, then save the result to keep it.</span>';return;}
+  names.forEach(k=>{
+    const b=document.createElement('button');b.className='chip';b.type='button';b.dataset.mine=k;
+    b.innerHTML='<span></span><span class="x" role="button" aria-label="Delete '+k+'">&times;</span>';
+    b.firstChild.textContent=k;
+    b.addEventListener('click',e=>{
+      if(e.target.classList.contains('x')){
+        delete MINE[k];jsave(MINE_KEY,MINE);renderMine();paint();return;}
+      selected=k;
+      KEYS.forEach(x=>document.getElementById('s-'+x).value=MINE[k][x]);
+      document.getElementById('s-oz').value=MINE[k].oz;paint();});
+    host.appendChild(b);});
+}
+function isBuiltin(n){return Object.prototype.hasOwnProperty.call(BUILTIN,n);}
+function writePreset(name,formula){
+  if(isBuiltin(name)){
+    OVER[name]=formula;jsave(OVER_KEY,OVER);
+    for(const gk in GROUPS)if(GROUPS[gk][name])GROUPS[gk][name]=formula;
+    ALL[name]=formula;
+  }else{MINE[name]=formula;jsave(MINE_KEY,MINE);}
+}
+function say(html){document.getElementById('save-msg').innerHTML=html;}
+function editTarget(){
+  const typed=document.getElementById('save-name').value.trim();
+  if(typed&&(isBuiltin(typed)||MINE[typed]))return typed;
+  return selected;
+}
+function refreshEditBar(){
+  const upd=document.getElementById('save-update'),rev=document.getElementById('save-revert');
+  const t=editTarget();
+  const base=t?(isBuiltin(t)?ALL[t]:MINE[t]):null;
+  const dirty=base&&!matches(currentFormula(),base);
+  upd.hidden=!dirty;
+  if(t)upd.textContent='Update \u201C'+t+'\u201D';
+  rev.hidden=!(t&&isBuiltin(t)&&OVER[t]);
+  if(t)rev.textContent='Revert \u201C'+t+'\u201D';
+}
+document.getElementById('save-go').addEventListener('click',()=>{
+  const inp=document.getElementById('save-name'),nm=inp.value.trim();
+  if(!nm){say('<span class="bad">Give it a name first.</span>');inp.focus();return;}
+  if(isBuiltin(nm)){say('<span class="bad">\u201C'+nm+'\u201D is a built-in. Adjust it and use Update instead.</span>');return;}
+  MINE[nm]=currentFormula();jsave(MINE_KEY,MINE);inp.value='';selected=nm;
+  say('<span class="ok">Saved as \u201C'+nm+'\u201D.</span>');renderMine();paint();});
+document.getElementById('save-update').addEventListener('click',()=>{
+  const name=editTarget();
+  if(!name)return;
+  writePreset(name,currentFormula());
+  say('<span class="ok">\u201C'+name+'\u201D updated.</span>'+
+    (isBuiltin(name)?' Your version replaces the built-in until you revert it.':''));
+  renderMine();paint();});
+document.getElementById('save-revert').addEventListener('click',()=>{
+  const name=editTarget();
+  if(!name||!isBuiltin(name))return;
+  selected=name;
+  delete OVER[name];jsave(OVER_KEY,OVER);
+  const def=JSON.parse(JSON.stringify(BUILTIN[name]));
+  for(const gk in GROUPS)if(GROUPS[gk][name])GROUPS[gk][name]=def;
+  ALL[name]=def;
+  KEYS.forEach(x=>document.getElementById('s-'+x).value=def[x]);
+  document.getElementById('s-oz').value=def.oz;
+  say('<span class="ok">\u201C'+name+'\u201D restored to its original.</span>');paint();});
+document.getElementById('save-name').addEventListener('input',()=>{say('');refreshEditBar();});
+renderMine();
+
+const HORIZON=8;
+function paintInv(){
+  const wk=+document.getElementById('s-week').value;
+  document.getElementById('v-week').textContent=wk;
+  let min=Infinity,minName='',value=0,short=[];
+  KEYS.forEach(k=>{
+    const per=+document.getElementById('s-'+k).value,
+          cell=document.getElementById('r-'+k),
+          wks=document.getElementById('w-'+k),
+          fill=document.getElementById('f-'+k);
+    value+=stock[k]*ING[k].cost;
+    if(per<=0){cell.textContent='not used';cell.className='';
+      wks.textContent='';fill.style.width='0%';fill.className='s-out';return;}
+    const n=Math.floor(stock[k]/per), weeks=n/wk;
+    cell.textContent=n+(n===1?' shake':' shakes');
+    const level=n===0?'bad':weeks<1?'bad':weeks<2?'warn':'ok';
+    cell.className=level==='ok'?'':level;
+    wks.textContent=n===0?'out':weeks<1?Math.round(weeks*7)+'d':weeks.toFixed(1)+'w';
+    wks.className=level==='ok'?'':level;
+    fill.style.width=Math.min(100,weeks/HORIZON*100).toFixed(1)+'%';
+    fill.className='s-'+level;
+    if(n<wk*2)short.push(ING[k].n);
+    if(n<min){min=n;minName=ING[k].n;}
+  });
+  if(!isFinite(min))min=0;
+  document.getElementById('i-left').textContent=min;
+  const wks=min/wk;
+  document.getElementById('i-when').textContent=
+    min===0?'now':wks<1?Math.round(min/(wk/7))+' days':wks.toFixed(1)+' weeks';
+  document.getElementById('i-what').textContent=min===0?minName:(min<wk*2?minName:'nothing yet');
+  document.getElementById('i-value').textContent='$'+value.toFixed(0);
+  const d=new Date();d.setDate(d.getDate()+Math.round(min/wk*7));
+  const bs=document.getElementById('batch-stock');
+  if(bs){
+    const gaps=shortfall(batchN);
+    bs.innerHTML=gaps.length
+      ? '<span class="warn">Short for this batch: '+gaps.join(', ')+'.</span>'
+      : '<span class="ok">Enough on hand.</span> Logging subtracts it from your inventory.';
+  }
+  document.getElementById('inv-note').textContent=min===0
+    ? 'Nothing to make. Add stock above, or tap a package button to record a delivery.'
+    : 'At '+wk+' shakes a week you have '+min+' left, running out around '+
+      d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+'. '+
+      (short.length?'Order soon: '+short.join(', ')+'.':'Nothing needs reordering yet.');
+}
+syncInputs();
+
+let labelDate=Date.now();
+function pct(v,d){return Math.round(v/d*100)+'%';}
+function rnd(v,step){return step<1?Math.round(v/step)*step:Math.round(v/step)*step;}
+function ingredientList(){
+  return KEYS.map(k=>({k:k,g:+document.getElementById('s-'+k).value}))
+    .filter(o=>o.g>0).sort((a,b)=>b.g-a.g)
+    .map(o=>{const dd=DECL[o.k];return dd.n+(dd.sub?' ('+dd.sub+')':'');})
+    .join(', ')+'.';
+}
+function allergenList(){
+  const set=[];
+  KEYS.forEach(k=>{if(+document.getElementById('s-'+k).value>0)
+    DECL[k].al.forEach(a=>{if(set.indexOf(a)<0)set.push(a);});});
+  return set.join(', ');
+}
+function renderLead(){
+  const el=document.getElementById('pb-body');if(!el)return;
+  let lo=0,hi=0,clo=0,chi=0;const known=[],unknown=[];
+  KEYS.forEach(k=>{const g=+document.getElementById('s-'+k).value;if(!g)return;
+    const d=PB[k]||{lo:null,cdlo:null};
+    if(d.lo===null&&d.cdlo===null){unknown.push(ING[k].n+' '+g+'g');return;}
+    const r={n:ING[k].n+(d.est?'*':''),g:g,lo:(d.lo||0)*g,hi:(d.hi||0)*g,
+             clo:(d.cdlo===null?null:d.cdlo*g),chi:(d.cdhi===null?null:d.cdhi*g),src:d.src};
+    lo+=r.lo;hi+=r.hi;if(r.clo!==null){clo+=r.clo;chi+=r.chi;}
+    known.push(r);});
+  const n=+document.getElementById('s-n').value||2;
+  const rng=(a,b)=>a.toFixed(2)+(Math.abs(b-a)<0.005?'':'\u2013'+b.toFixed(2));
+  const bar=(b,lim,limtxt,top)=>{
+    const over=b*n>lim;
+    return '<div class="bar"'+(top?' style="margin-top:10px"':'')+'><i style="width:'+
+        Math.min(100,b*n/lim*100).toFixed(0)+'%" class="'+(over?'s-bad':'s-ok')+'"></i></div>'+
+      '<div class="blabel" style="margin-top:4px"><span>'+limtxt+'</span><span class="'+
+        (over?'bad':'ok')+'">'+Math.round(b*n/lim*100)+'%</span></div>';};
+  // limits: [[ug/day, label], ...]; one bar per limit
+  const metal=(ttl,a,b,limits)=>
+    '<div style="flex:1;min-width:150px">'+
+      '<div style="font-size:13px;color:var(--faint)">'+ttl+'</div>'+
+      '<div style="font-size:23px;font-weight:500;letter-spacing:-.02em">'+rng(a,b)+' \u00B5g</div>'+
+      '<div style="font-size:13px;color:var(--mid);margin-bottom:6px">per shake &middot; '+
+        rng(a*n,b*n)+' at '+n+'/day</div>'+
+      limits.map((l,i)=>bar(b,l[0],l[1],i>0)).join('')+'</div>';
+  el.innerHTML=
+    '<div style="display:flex;gap:26px;flex-wrap:wrap;margin-bottom:18px">'+
+      metal('Lead',lo,hi,[[0.5,'vs 0.5 \u00B5g/day (Prop 65)'],[12.5,'vs 12.5 \u00B5g/day (FDA adult)']])+
+      metal('Cadmium',clo,chi,[[4.1,'vs 4.1 \u00B5g/day (Prop 65)']])+
+    '</div>'+
+    '<table><thead><tr><th>Counted</th><th style="text-align:right">Lead \u00B5g</th>'+
+      '<th style="text-align:right">Cadmium \u00B5g</th></tr></thead><tbody>'+
+    known.map(r=>'<tr><td>'+r.n+' '+r.g+'g</td><td class="n">'+rng(r.lo,r.hi)+'</td>'+
+      '<td class="n">'+(r.clo===null?'&mdash;':rng(r.clo,r.chi))+'</td></tr>').join('')+
+    '</tbody></table>'+
+    '<p class="note"><b>Not counted: '+(unknown.length?unknown.join(', '):'none')+'.</b> '+
+      'No published testing was found for these, so the figures above are a floor, not a total.</p>'+
+    '<p class="note" style="border-top:0;padding-top:0">Huel figures are measured for that exact '+
+      'product. Cocoa is a range from surveys of other brands. Ingredients marked * are rough estimates '+
+      'of typical levels for that kind of food, not testing of your packages, and have no cadmium figure. '+
+      'The 0.5 and 4.1 \u00B5g limits are California Prop 65 levels, the strictest published; '+
+      'the FDA\u2019s interim reference for lead in adults is 12.5 \u00B5g/day and it sets no '+
+      'comparable daily cadmium figure. Sources: '+
+      [...new Set(known.map(r=>r.src))].join('; ')+'.</p>';
+}
+function renderLabel(){
+  const el=document.getElementById('nutlabel');if(!el)return;
+  let cal=0,pro=0,fat=0,fib=0,dry=0;
+  const m={c:0,su:0,sf:0,na:0,ca:0,fe:0,k:0,vd:0};
+  KEYS.forEach(key=>{const g=+document.getElementById('s-'+key).value,i=ING[key],x=MICRO[key];
+    cal+=i.cal*g;pro+=i.p*g;fat+=i.fat*g;fib+=i.f*g;dry+=g;
+    for(const q in m)m[q]+=x[q]*g;});
+  const full=dry, scale=(basis>0&&dry>0)?basis/dry:1;
+  cal*=scale;pro*=scale;fat*=scale;fib*=scale;
+  for(const q in m)m[q]*=scale;
+  const netc=m.c, oz=+document.getElementById('s-oz').value;
+  const shown=basis>0?basis:dry, water=Math.round(oz*(basis>0?basis/full:1));
+  const made=new Date(labelDate).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  const row=(lbl,val,dv,cls)=>'<div class="ln'+(cls?' '+cls:'')+'"><span>'+lbl+' '+val+'</span><span>'+
+    (dv===null?'':'<b>'+dv+'</b>')+'</span></div>';
+  el.innerHTML=
+    '<div class="ttl">Nutrition Facts</div>'+
+    '<div class="made">'+currentName()+' &middot; mixed '+made+'</div>'+
+    '<hr>'+
+    '<div class="srv"><span>'+(basis>0?Math.floor(full*batchN/basis):batchN)+
+      ' servings per batch</span></div>'+
+    '<div class="srv"><span>Serving size</span><span>'+Math.round(shown)+' g ('+water+' fl oz water)</span></div>'+
+    '<hr class="thick">'+
+    '<div class="dvh">Amount per serving</div>'+
+    '<div class="cal"><span>Calories</span><span>'+Math.round(cal)+'</span></div>'+
+    '<hr class="mid">'+
+    '<div class="dvh">% Daily Value*</div>'+
+    row('<b>Total Fat</b>',rnd(fat,1)+'g',pct(fat,DV.fat))+
+    row('Saturated Fat',rnd(m.sf,.5).toFixed(1)+'g',pct(m.sf,DV.sf),'sub')+
+    row('<b>Sodium</b>',Math.round(m.na)+'mg',pct(m.na,DV.na))+
+    row('<b>Total Carbohydrate</b>',Math.round(netc)+'g',pct(netc,DV.c))+
+    row('Dietary Fiber',Math.round(fib)+'g',pct(fib,DV.fib),'sub')+
+    row('Total Sugars',Math.round(m.su)+'g',null,'sub')+
+    row('Includes '+(+document.getElementById('s-pb2').value*MICRO.pb2.as*scale).toFixed(1)+'g Added Sugars','',null,'sub2')+
+    row('<b>Protein</b>',Math.round(pro)+'g','<b>'+pct(pro,DV.p)+'</b>')+
+    '<hr class="mid">'+
+    row('Vitamin D',m.vd.toFixed(1)+'mcg',pct(m.vd,DV.vd))+
+    row('Calcium',Math.round(m.ca)+'mg',pct(m.ca,DV.ca))+
+    row('Iron',m.fe.toFixed(1)+'mg',pct(m.fe,DV.fe))+
+    row('Potassium',Math.round(m.k)+'mg',pct(m.k,DV.k))+
+    '<hr class="thick">'+
+    '<div class="foot">*Percent Daily Values are based on a 2,000 calorie diet.</div>'+
+    '<hr>'+
+    '<div class="ingr"><b>INGREDIENTS:</b> '+ingredientList()+'</div>'+
+    (allergenList()?'<div class="ingr" style="margin-top:3px"><b>CONTAINS: '+allergenList()+'.</b></div>':'')+
+    '<div class="foot" style="margin-top:4px">Homemade. Values calculated from package data, '+
+    'not laboratory tested. Not nutritionally complete &mdash; take a multivitamin separately.</div>';
+}
+function fmtDate(t){const d=new Date(t);
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+', '+
+    d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}
+function renderLog(){
+  const body=document.getElementById('log-rows'),empty=document.getElementById('log-empty');
+  body.innerHTML='';empty.hidden=LOG.length>0;
+  LOG.forEach(e=>{
+    const tr=document.createElement('tr');tr.className='logrow';
+    tr.innerHTML='<td>'+fmtDate(e.t)+'</td><td>'+e.name+'</td>'+
+      '<td class="n">'+(e.n===1?'1 shake':e.n+' shakes')+'</td>'+
+      '<td class="n">'+e.cal+' cal &middot; '+e.p+'g</td>'+
+      '<td class="n">$'+(e.cost*e.n).toFixed(2)+'</td>';
+    const det=document.createElement('tr');det.hidden=true;
+    const parts=KEYS.filter(k=>e.grams[k]>0).map(k=>ING[k].n+' '+e.grams[k]+'g').join(' &middot; ');
+    det.innerHTML='<td class="detail" colspan="5">'+parts+
+      '<br>'+e.dry+'g dry per shake in '+e.oz+' oz &middot; '+e.fat+'g fat &middot; '+e.fib+
+      'g fiber &middot; $'+e.cost.toFixed(2)+' per shake</td>';
+    tr.addEventListener('click',()=>det.hidden=!det.hidden);
+    body.appendChild(tr);body.appendChild(det);});
+  const s=document.getElementById('hist-summary');
+  if(!LOG.length){s.textContent='Nothing logged yet.';return;}
+  const shakes=LOG.reduce((a,e)=>a+e.n,0),spend=LOG.reduce((a,e)=>a+e.cost*e.n,0);
+  s.textContent=shakes+' shakes logged across '+LOG.length+' entries, $'+spend.toFixed(2)+
+    ' of ingredients used. Earliest entry '+fmtDate(LOG[LOG.length-1].t)+'.';
+}
+function closeModal(){document.getElementById('modal').hidden=true;}
+const BASIS={'Per serving':0,'Per 90 g (2 scoops)':90,'Per 100 g':100};
+let basis=0;
+Object.keys(BASIS).forEach(k=>{const b=document.createElement('button');
+  b.className='chip';b.type='button';b.textContent=k;b.dataset.k=k;
+  b.setAttribute('aria-pressed',String(BASIS[k]===0));
+  b.addEventListener('click',()=>{basis=BASIS[k];
+    document.querySelectorAll('#c-basis .chip').forEach(x=>
+      x.setAttribute('aria-pressed',String(x.dataset.k===k)));
+    renderLabel();});
+  document.getElementById('c-basis').appendChild(b);});
+document.getElementById('label-print').addEventListener('click',()=>{
+  document.getElementById('t-batch').click();renderLabel();
+  setTimeout(()=>window.print(),0);});
+document.getElementById('label-date').addEventListener('click',()=>{labelDate=Date.now();renderLabel();});
+document.getElementById('open-log').addEventListener('click',()=>{
+  renderLog();document.getElementById('modal').hidden=false;
+  document.getElementById('modal-x').focus();});
+document.getElementById('modal-x').addEventListener('click',closeModal);
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!document.getElementById('modal').hidden)closeModal();});
+document.getElementById('log-clear').addEventListener('click',()=>{
+  LOG=[];jsave(LOG_KEY,LOG);renderLog();});
+document.getElementById('log-csv').addEventListener('click',()=>{
+  const head=['date','formula','shakes','cal_per_shake','protein_g','fat_g','fiber_g',
+    'dry_g','liquid_oz','cost_per_shake','total_cost'].concat(KEYS.map(k=>k+'_g'));
+  const rows=LOG.map(e=>[new Date(e.t).toISOString(),'"'+e.name+'"',e.n,e.cal,e.p,e.fat,e.fib,
+    e.dry,e.oz,e.cost.toFixed(3),(e.cost*e.n).toFixed(2)].concat(KEYS.map(k=>e.grams[k]||0)));
+  const csv=[head.join(',')].concat(rows.map(r=>r.join(','))).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='shake-log.csv';a.click();URL.revokeObjectURL(a.href);});
+renderLog();
+
+const TABS=[['t-build','v-build'],['t-batch','v-batch'],['t-day','v-day'],['t-inv','v-inv']];
+TABS.forEach(([t,v])=>document.getElementById(t).addEventListener('click',()=>{
+  TABS.forEach(([tt,vv])=>{
+    document.getElementById(tt).setAttribute('aria-selected',String(tt===t));
+    document.getElementById(vv).hidden=(vv!==v);});
+}));
+paint();
+</script>
+</body>
+</html>
