@@ -328,12 +328,14 @@ const ING={
  chia :{n:'Chia',         cal:4.86,p:.165,f:.34, fat:.307,cost:5.07/454,   pkg:454, max:20,tbsp:12.0,thick:2.5},
  sweet:{n:'Sweetener',    cal:0.40,p:0,   f:0,   fat:0,   cost:29.94/1361, pkg:1361,max:20,tbsp:12.0},
  ban  :{n:'Banana powder',cal:3.50,p:.040,f:.07, fat:.015,cost:15.00/340,  pkg:340, max:30,tbsp:8.0},
- esp  :{n:'Espresso (dry)',cal:3.50,p:.140,f:0,  fat:0,   cost:0.03,       pkg:340, max:4, tbsp:5.0},
+ esp  :{n:'Espresso (dry)',cal:3.50,p:.140,f:0,  fat:0,   cost:0.03,       pkg:340, max:6, tbsp:5.0},
  salt :{n:'Salt',         cal:0,   p:0,   f:0,   fat:0,   cost:0.002,      pkg:400, max:3, tbsp:6.0},
  huel :{n:'Huel Black',   cal:4.444,p:.444,f:.078,fat:.189,cost:0.044,     pkg:1750,max:90,tbsp:7.0,thick:2},
  // Xanthan: It's Just! 8 oz (227 g) $8.99. Nutrition is a typical value, not this bag's label; at under 1 g it barely registers.
  // thick: a few tenths of a gram thickens like several grams of other powders. Rough.
- xan  :{n:'Xanthan gum',  cal:3.30,p:0,   f:.78, fat:0,   cost:8.99/227,   pkg:227, max:2, tbsp:9.0,step:0.1,thick:40}
+ xan  :{n:'Xanthan gum',  cal:3.30,p:0,   f:.78, fat:0,   cost:8.99/227,   pkg:227, max:2, tbsp:9.0,step:0.1,thick:40},
+ // Cardamom: USDA ground cardamom nutrition. Price is a typical ~$9 per 2 oz jar until you buy one.
+ card :{n:'Cardamom',     cal:3.11,p:.108,f:.28, fat:.067,cost:8.99/57,    pkg:57,  max:3, tbsp:5.8,step:0.1}
 };
 const KEYS=Object.keys(ING);
 // per gram: carb, sugar, satfat, sodium mg, calcium mg, iron mg, potassium mg, vitD mcg; as = added sugar (PB: Micro Ingredients label, 17 g scoop)
@@ -350,7 +352,8 @@ const MICRO={
  esp  :{c:.100,su:0,   sf:0,   na:0.10,ca:1.30,fe:.050,k:20.0,vd:0},
  salt :{c:0,   su:0,   sf:0,   na:387.6,ca:0,  fe:0,   k:0,   vd:0},
  huel :{c:.189,su:.044,sf:.033,na:3.90,ca:3.60,fe:.050,k:10.0,vd:.056},
- xan  :{c:.780,su:0,   sf:0,   na:0,   ca:0,   fe:0,   k:0,   vd:0}};
+ xan  :{c:.780,su:0,   sf:0,   na:0,   ca:0,   fe:0,   k:0,   vd:0},
+ card :{c:.684,su:0,   sf:.007,na:0.18,ca:3.83,fe:.140,k:11.2,vd:0}};
 const DV={fat:78,sf:20,na:2300,c:275,fib:28,p:50,ca:1300,fe:18,k:4700,vd:20};
 // Lead, ug per gram. lo/hi = observed range in published testing of that food category.
 // src: what the range is drawn from. null = no figure at all. Entries with est:true are rough
@@ -369,7 +372,8 @@ const PB={
  sweet:{lo:0,hi:.010,cdlo:null,cdhi:null,est:true,src:'estimate 0-10 ppb'},
  esp  :{lo:null,hi:null,cdlo:null,cdhi:null,src:null},
  salt :{lo:0,hi:.050,cdlo:null,cdhi:null,est:true,src:'estimate 0-50 ppb for refined salt'},
- xan  :{lo:null,hi:null,cdlo:null,cdhi:null,src:null}};
+ xan  :{lo:null,hi:null,cdlo:null,cdhi:null,src:null},
+ card :{lo:null,hi:null,cdlo:null,cdhi:null,src:null}};
 // label copy: display name, sub-ingredients as printed on each package, allergens
 Object.keys(ING).forEach(k=>{
   if(!PB[k])PB[k]={lo:null,hi:null,cdlo:null,cdhi:null,src:null};
@@ -390,7 +394,8 @@ const DECL={
  esp  :{n:'Ground Decaffeinated Coffee',sub:'',al:[]},
  salt :{n:'Salt',sub:'',al:[]},
  huel :{n:'Huel Black Edition',sub:'Pea Protein, Faba Bean Protein, Ground Flaxseed, Tapioca Starch, MCT Powder, Vitamin and Mineral Blend',al:['Coconut']},
- xan  :{n:'Xanthan Gum',sub:'',al:[]}};
+ xan  :{n:'Xanthan Gum',sub:'',al:[]},
+ card :{n:'Ground Cardamom',sub:'',al:[]}};
 const CUT={
  'High satiety':{whey:30,milk:24,oat:14,pb2:12,cocoa:9,malt:5,chia:12,sweet:10,ban:0,esp:0,salt:1,huel:0,oz:12},
  'Cut light':{whey:28,milk:22,oat:8,pb2:8,cocoa:8,malt:4,chia:8,sweet:8,ban:0,esp:0,salt:1,huel:0,oz:10}};
@@ -402,6 +407,7 @@ const TASTE={
  'Huel forward':{whey:14,milk:20,oat:5,pb2:14,cocoa:3,malt:10,chia:5,sweet:10,ban:16,esp:0,salt:1,huel:20,oz:13},
  'Banana PB + Huel':{whey:16,milk:22,oat:5,pb2:14,cocoa:5,malt:10,chia:5,sweet:10,ban:18,esp:0,salt:1,huel:20,oz:14},
  'Huel PB':{whey:18,milk:6,oat:4,pb2:27,cocoa:0,malt:5,chia:10,sweet:3,ban:3,esp:0,salt:1,huel:19,oz:11},
+ 'Turkish coffee':{whey:27,milk:12,oat:12,pb2:0,cocoa:0,malt:6,chia:18,sweet:8,ban:0,esp:4,salt:0,huel:15,xan:0.4,card:1,oz:13},
  'Huel lean':{whey:16,milk:20,oat:0,pb2:12,cocoa:5,malt:8,chia:4,sweet:9,ban:16,esp:0,salt:1,huel:20,oz:12},
  'Banana PB':{whey:22,milk:22,oat:15,pb2:16,cocoa:6,malt:10,chia:6,sweet:10,ban:18,esp:0,salt:1,huel:0,oz:14},
  'Banana PB mishap':{whey:22,milk:5,oat:15,pb2:16,cocoa:8,malt:30,chia:8,sweet:16,ban:18,esp:0,salt:1,huel:0,oz:15},
@@ -554,7 +560,7 @@ KEYS.concat(['oz','tgt','n','maint']).forEach(k=>
   document.getElementById('s-'+k).addEventListener('input',paint));
 
 const STORE='shakeStock.v1';
-const CART={whey:2268,milk:1638,oat:2268,pb2:1814,cocoa:454,chia:454,malt:1234,sweet:1361,ban:340,esp:340,salt:400,huel:5250,xan:227};
+const CART={whey:2268,milk:1638,oat:2268,pb2:1814,cocoa:454,chia:454,malt:1234,sweet:1361,ban:340,esp:340,salt:400,huel:5250,xan:227,card:57};
 let stock={},lastState=null,memOnly=false;
 function loadStock(){
   let found=false;
