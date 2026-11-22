@@ -60,6 +60,9 @@ td.u{text-align:right;color:var(--mid);font-size:13.5px}
 tr:last-child td{border-bottom:0}
 tfoot td{font-weight:500;border-top:1px solid var(--ink);border-bottom:0;padding-top:10px}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.leadstrip{margin:-14px 0 24px}
+.linkbtn{appearance:none;background:none;border:0;padding:0;font:inherit;color:var(--mid);text-decoration:underline;cursor:pointer}
+.linkbtn:hover{color:var(--ink)}
 .bar{height:5px;background:var(--rule);border-radius:3px;overflow:hidden;margin-top:5px;min-width:70px}
 .bar i{display:block;height:100%;border-radius:3px;background:var(--mid);transition:width .18s ease}
 .bar i.s-ok{background:var(--ok)}.bar i.s-warn{background:var(--warn)}.bar i.s-bad{background:var(--bad)}
@@ -142,6 +145,7 @@ ol li:last-child{margin-bottom:0}
   <button class="tab" role="tab" id="t-day" aria-controls="v-day" aria-selected="false">Your day</button>
   <button class="tab" role="tab" id="t-inv" aria-controls="v-inv" aria-selected="false">Inventory</button>
 </div>
+<div class="readout leadstrip" id="lead-strip" aria-live="polite"></div>
 
 <section id="v-build" role="tabpanel" aria-labelledby="t-build">
   <p class="grp">Cut-oriented</p>
@@ -772,8 +776,8 @@ function allergenList(){
     DECL[k].al.forEach(a=>{if(set.indexOf(a)<0)set.push(a);});});
   return set.join(', ');
 }
-function renderLead(){
-  const el=document.getElementById('pb-body');if(!el)return;
+// Lead and cadmium totals (ug per shake) for the current sliders.
+function leadTotals(){
   let lo=0,hi=0,clo=0,chi=0;const known=[],unknown=[];
   KEYS.forEach(k=>{const g=+document.getElementById('s-'+k).value;if(!g)return;
     const d=PB[k]||{lo:null,cdlo:null};
@@ -782,8 +786,29 @@ function renderLead(){
              clo:(d.cdlo===null?null:d.cdlo*g),chi:(d.cdhi===null?null:d.cdhi*g),src:d.src};
     lo+=r.lo;hi+=r.hi;if(r.clo!==null){clo+=r.clo;chi+=r.chi;}
     known.push(r);});
+  return {lo,hi,clo,chi,known,unknown};
+}
+const rng=(a,b)=>a.toFixed(2)+(Math.abs(b-a)<0.005?'':'\u2013'+b.toFixed(2));
+const FDA_PB=12.5, P65_PB=0.5, P65_CD=4.1;
+function renderLeadStrip(t){
+  const el=document.getElementById('lead-strip');if(!el)return;
   const n=+document.getElementById('s-n').value||2;
-  const rng=(a,b)=>a.toFixed(2)+(Math.abs(b-a)<0.005?'':'\u2013'+b.toFixed(2));
+  const pf=Math.round(t.lo*n/FDA_PB*100), ph=Math.round(t.hi*n/FDA_PB*100), pc=Math.round(t.chi*n/P65_CD*100);
+  const cl=v=>v>100?'bad':v>=50?'warn':'ok';
+  el.innerHTML=
+    '<span>Lead <b>'+rng(t.lo,t.hi)+' \u00B5g</b> per shake</span>'+
+    '<span>vs FDA adult level at '+n+'/day <b class="'+cl(ph)+'">'+(pf===ph?ph:pf+'\u2013'+ph)+'%</b></span>'+
+    '<span>Cadmium vs Prop 65 <b class="'+cl(pc)+'">'+pc+'%</b></span>'+
+    '<button class="linkbtn" type="button" id="lead-more">Details</button>';
+  document.getElementById('lead-more').addEventListener('click',()=>{
+    document.getElementById('t-batch').click();
+    document.getElementById('pb-body').scrollIntoView({behavior:'smooth',block:'center'});});
+}
+function renderLead(){
+  const t=leadTotals();renderLeadStrip(t);
+  const el=document.getElementById('pb-body');if(!el)return;
+  const {lo,hi,clo,chi,known,unknown}=t;
+  const n=+document.getElementById('s-n').value||2;
   const bar=(b,lim,limtxt,top)=>{
     const over=b*n>lim;
     return '<div class="bar"'+(top?' style="margin-top:10px"':'')+'><i style="width:'+
@@ -828,7 +853,7 @@ function renderLabel(){
   const full=dry, scale=(basis>0&&dry>0)?basis/dry:1;
   cal*=scale;pro*=scale;fat*=scale;fib*=scale;
   for(const q in m)m[q]*=scale;
-  const netc=m.c, oz=+document.getElementById('s-oz').value;
+  const netc=m.c, oz=+document.getElementById('s-oz').value, pbt=leadTotals();
   const shown=basis>0?basis:dry, water=Math.round(oz*(basis>0?basis/full:1));
   const made=new Date(labelDate).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
   const row=(lbl,val,dv,cls)=>'<div class="ln'+(cls?' '+cls:'')+'"><span>'+lbl+' '+val+'</span><span>'+
@@ -858,13 +883,16 @@ function renderLabel(){
     row('Calcium',Math.round(m.ca)+'mg',pct(m.ca,DV.ca))+
     row('Iron',m.fe.toFixed(1)+'mg',pct(m.fe,DV.fe))+
     row('Potassium',Math.round(m.k)+'mg',pct(m.k,DV.k))+
+    '<hr class="mid">'+
+    row('Lead (est.)',rng(pbt.lo*scale,pbt.hi*scale)+'\u00B5g',null)+
+    row('Cadmium (est.)',pbt.chi>0?rng(pbt.clo*scale,pbt.chi*scale)+'\u00B5g':'&mdash;',null)+
     '<hr class="thick">'+
     '<div class="foot">*Percent Daily Values are based on a 2,000 calorie diet.</div>'+
     '<hr>'+
     '<div class="ingr"><b>INGREDIENTS:</b> '+ingredientList()+'</div>'+
     (allergenList()?'<div class="ingr" style="margin-top:3px"><b>CONTAINS: '+allergenList()+'.</b></div>':'')+
     '<div class="foot" style="margin-top:4px">Homemade. Values calculated from package data, '+
-    'not laboratory tested. Not nutritionally complete &mdash; take a multivitamin separately.</div>';
+    'not laboratory tested; lead and cadmium are estimates from published testing. Not nutritionally complete &mdash; take a multivitamin separately.</div>';
 }
 function fmtDate(t){const d=new Date(t);
   return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+', '+
